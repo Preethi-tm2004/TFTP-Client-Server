@@ -49,12 +49,20 @@ TFTP-Client-Server/
 
 ## Compilation
 
-Compile the server and client from the project root directory:
+Compile both the TFTP server and client from the project root directory using the Makefile:
 
 ```bash
-gcc -Wall -Wextra tftp_server.c udp.c tftp.c file.c -o tftp_server
+make
+```
 
-gcc -Wall -Wextra tftp_client.c udp.c tftp.c file.c -o tftp_client
+This generates two executable files:
+- `tftp_server`
+- `tftp_client`
+
+To remove the generated executables:
+
+```bash
+make clean
 ```
 
 ## Execution
@@ -70,7 +78,7 @@ cd server_files
 
 **2. Start the client**
 
-Open another terminal from the project root:
+Open another terminal and execute:
 
 ```bash
 cd client_files
@@ -79,13 +87,15 @@ cd client_files
 
 **3. Connect to the server**
 
-At the client prompt:
+At the client prompt, enter:
 
-```text
-connect 127.0.0.1
+```bash
+connect 127.0.0.1 6969
 ```
 
-The server listens on UDP port **6969**.
+The server listens on UDP port `6969`.
+
+You can now use the `get` and `put` commands to download and upload files.
 
 ## Client Commands
 

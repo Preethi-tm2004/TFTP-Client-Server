@@ -3,9 +3,11 @@
 
 #include <sys/time.h>
 
+
 int udp_bind_server(void)
 {
     int sockfd;
+    int opt = 1;
     struct sockaddr_in server_addr;
 
     /* Create UDP socket */
@@ -17,20 +19,25 @@ int udp_bind_server(void)
         return -1;
     }
 
+    /* Allow address reuse */
+    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
+                  &opt, sizeof(opt)) < 0)
+    {
+        perror("setsockopt");
+        close(sockfd);
+        return -1;
+    }
+
     /* Clear address structure */
     memset(&server_addr, 0, sizeof(server_addr));
 
-    /* IPv4 */
     server_addr.sin_family = AF_INET;
-
-    /* Accept packets on any local interface */
     server_addr.sin_addr.s_addr = INADDR_ANY;
-
-    /* TFTP server port */
     server_addr.sin_port = htons(TFTP_PORT);
 
     /* Bind socket to IP + port */
-    if(bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    if(bind(sockfd, (struct sockaddr *)&server_addr,
+            sizeof(server_addr)) < 0)
     {
         perror("bind");
         close(sockfd);
@@ -39,6 +46,7 @@ int udp_bind_server(void)
 
     return sockfd;
 }
+
 
 int udp_rebind_server(void)
 {

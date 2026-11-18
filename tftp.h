@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 /* TFTP uses UDP port 69 for the initial request[TFTP's well-known initial server port is UDP 69] */
-#define TFTP_PORT 69
+#define TFTP_PORT 6969
 
 /* TFTP Packet size */
 #define DATA_SIZE 512

@@ -1,0 +1,6 @@
+# Compiled executables
+tftp_client
+tftp_server
+
+# Object files
+*.o

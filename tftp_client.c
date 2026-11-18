@@ -8,7 +8,7 @@ static void print_menu(void)
     printf("  \033[34mconnect <IP> [port]        Connect to server\033[0m\n");
     printf("  \033[34mget <filename>             Receive a file from server\033[0m\n");
     printf("  \033[34mput <filename>             Send a file to server\033[0m\n");
-    printf("  \033[34mmode <octet|netascii>      Set transfer mode\033[0m\n");
+    printf("  \033[34mmode <octet>               Set transfer mode\033[0m\n");
     printf("  \033[34mbye / quit                 Close and exit\033[0m\n");
     printf("  \033[34mhelp                       Show this menu\033[0m\n\n");
 }
@@ -169,6 +169,23 @@ int tftp_get(int sockfd, struct  sockaddr_in *server_addr, const char *filename,
 
         first_data_received = 1;
 
+        /* Handle duplicate DATA block */
+        if(expected_block > INITIAL_BLOCK && packet.blocknum == (uint16_t)(expected_block - 1))
+        {
+            printf("Duplicate DATA block %u received. Resending ACK...\n",
+                packet.blocknum);
+
+            if(udp_send_packet(sockfd, ack_buffer, ack_length, server_addr) < 0)
+            {
+                printf("Failed to resend ACK\n");
+                file_close(fd);
+                return -1;
+            }
+
+            continue;
+        }
+
+        /* Reject unexpected block numbers */
         if(packet.blocknum != expected_block)
         {
             printf("Unexpected block number\n");
@@ -426,6 +443,7 @@ int main(void)
 {
     int sockfd = -1;
     int connected = 0;
+    int transfer_status;
 
     struct sockaddr_in server_addr;
 
@@ -508,7 +526,12 @@ int main(void)
             }
 
             /* Download the requested file from the server */
-            if(tftp_get(sockfd, &server_addr, argument, mode) == 0)
+            transfer_status = tftp_get(sockfd, &server_addr, argument, mode);
+
+            /* Restore the server's well-known port for the next request */
+            server_addr.sin_port = htons(TFTP_PORT);
+
+            if(transfer_status == 0)
             {
                 printf("\033[32mGET successful\033[0m\n");
             }
@@ -526,7 +549,12 @@ int main(void)
             }
 
             /* Upload the requested file to the server */
-            if(tftp_put(sockfd, &server_addr, argument, mode) == 0)
+            transfer_status = tftp_put(sockfd, &server_addr, argument, mode);
+
+            /* Restore the server's well-known port for the next request */
+            server_addr.sin_port = htons(TFTP_PORT);
+
+            if(transfer_status == 0)
             {
                 printf("\033[32mPUT successful\033[0m\n");
             }

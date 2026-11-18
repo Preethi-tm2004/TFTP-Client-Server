@@ -264,7 +264,39 @@ int handle_rrq(struct sockaddr_in *client_addr, tftp_packet_t *request)
 
     if(fd < 0)
     {
+        uint8_t error_buffer[PACKET_SIZE];
+        int error_length;
+
         printf("Failed to open file: %s\n", request->filename);
+
+        /* Create a new transfer socket */
+        transfer_sockfd = udp_rebind_server();
+
+        if(transfer_sockfd < 0)
+        {
+            return -1;
+        }
+
+        /* Form ERROR packet: File not found */
+        error_length = packet_form_error(error_buffer,sizeof(error_buffer),ERR_FILE_NOT_FOUND,"File not found");
+
+        if(error_length < 0)
+        {
+            close(transfer_sockfd);
+            return -1;
+        }
+
+        /* Send ERROR packet to client */
+        if(udp_send_packet(transfer_sockfd,error_buffer,error_length,client_addr) < 0)
+        {
+            perror("Failed to send ERROR packet");
+            close(transfer_sockfd);
+            return -1;
+        }
+
+        printf("Sent ERROR packet: File not found\n");
+
+        close(transfer_sockfd);
         return -1;
     }
 
